@@ -55,6 +55,7 @@ public class Main extends JFrame {
     private JPanel painelViaB;
     private JPanel painelPedestre;
     private JPanel painelHistorico;
+    private JPanel painelCampos;
 
     // Título
     private JLabel lblTitulo;
@@ -80,7 +81,12 @@ public class Main extends JFrame {
     private JCheckBox chkEmergencia;
     private JCheckBox chkModoNoturno;
 
-    // Prioridade
+    // Labels de formulários
+    private JLabel lblModoOperacao;
+    private JLabel lblPrioridade;
+
+    // Modos
+    private JComboBox<ControladorSemaforo.ModoOperacao> cmbModoOperacao;
     private JComboBox<ControladorSemaforo.ModoPrioridade> cmbPrioridade;
 
     // Botões
@@ -94,6 +100,7 @@ public class Main extends JFrame {
     private JLabel lblDescricao;
     private JLabel lblRegra;
     private JLabel lblContagem;
+    private JLabel lblTempos;
 
     // Histórico
     private JTextArea txtHistorico;
@@ -101,7 +108,7 @@ public class Main extends JFrame {
 
     public Main() {
         setTitle("Semáforo Inteligente");
-        setSize(1250, 720);
+        setSize(1280, 740);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(15, 15));
@@ -202,28 +209,30 @@ public class Main extends JFrame {
     }
 
     private JPanel criarPainelInfo() {
-        painelInfo = new JPanel(new GridLayout(5, 1, 5, 5));
+        painelInfo = new JPanel(new GridLayout(6, 1, 5, 5));
 
         lblEstado = new JLabel();
         lblBinario = new JLabel();
         lblDescricao = new JLabel();
         lblRegra = new JLabel();
         lblContagem = new JLabel();
+        lblTempos = new JLabel();
 
         painelInfo.add(lblEstado);
         painelInfo.add(lblBinario);
         painelInfo.add(lblDescricao);
         painelInfo.add(lblRegra);
         painelInfo.add(lblContagem);
+        painelInfo.add(lblTempos);
 
         return painelInfo;
     }
 
     private JPanel criarPainelControle() {
         painelControle = new JPanel(new BorderLayout(10, 10));
-        painelControle.setPreferredSize(new Dimension(340, 650));
+        painelControle.setPreferredSize(new Dimension(360, 680));
 
-        JPanel painelCampos = new JPanel();
+        painelCampos = new JPanel();
         painelCampos.setLayout(new BoxLayout(painelCampos, BoxLayout.Y_AXIS));
 
         chkViaA = new JCheckBox("Há veículo na via A");
@@ -239,6 +248,10 @@ public class Main extends JFrame {
             }
         });
 
+        lblModoOperacao = new JLabel("Modo do sistema:");
+        cmbModoOperacao = new JComboBox<ControladorSemaforo.ModoOperacao>(ControladorSemaforo.ModoOperacao.values());
+
+        lblPrioridade = new JLabel("Prioridade das vias:");
         cmbPrioridade = new JComboBox<ControladorSemaforo.ModoPrioridade>(ControladorSemaforo.ModoPrioridade.values());
 
         btnSimular = new JButton("Simular ciclo");
@@ -273,14 +286,18 @@ public class Main extends JFrame {
         painelCampos.add(chkPedestre);
         painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
         painelCampos.add(chkEmergencia);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 10)));
 
-        JLabel lblPrioridade = new JLabel("Prioridade das vias:");
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 12)));
+        painelCampos.add(lblModoOperacao);
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
+        painelCampos.add(cmbModoOperacao);
+
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 12)));
         painelCampos.add(lblPrioridade);
         painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
         painelCampos.add(cmbPrioridade);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 10)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 12)));
         painelCampos.add(chkModoNoturno);
 
         painelCampos.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -311,6 +328,7 @@ public class Main extends JFrame {
             return;
         }
 
+        controlador.setModoOperacao((ControladorSemaforo.ModoOperacao) cmbModoOperacao.getSelectedItem());
         controlador.setModoPrioridade((ControladorSemaforo.ModoPrioridade) cmbPrioridade.getSelectedItem());
 
         boolean viaA = chkViaA.isSelected();
@@ -416,9 +434,11 @@ public class Main extends JFrame {
         } else {
             btnAuto.setText("Iniciar automático");
             btnSimular.setEnabled(true);
+
             if (timerProximoCiclo != null) {
                 timerProximoCiclo.stop();
             }
+
             registrarHistorico("Modo automático desativado.");
         }
     }
@@ -436,6 +456,7 @@ public class Main extends JFrame {
         chkViaB.setSelected(false);
         chkPedestre.setSelected(false);
         chkEmergencia.setSelected(false);
+        cmbModoOperacao.setSelectedItem(ControladorSemaforo.ModoOperacao.CRUZAMENTO);
         cmbPrioridade.setSelectedItem(ControladorSemaforo.ModoPrioridade.ALTERNADA);
 
         btnAuto.setText("Iniciar automático");
@@ -491,6 +512,18 @@ public class Main extends JFrame {
                 pVermelho.setBackground(Color.RED);
                 break;
 
+            case AB_VERDE:
+                aVerde.setBackground(Color.GREEN);
+                bVerde.setBackground(Color.GREEN);
+                pVermelho.setBackground(Color.RED);
+                break;
+
+            case AB_AMARELO:
+                aAmarelo.setBackground(Color.YELLOW);
+                bAmarelo.setBackground(Color.YELLOW);
+                pVermelho.setBackground(Color.RED);
+                break;
+
             case PEDESTRE:
                 aVermelho.setBackground(Color.RED);
                 bVermelho.setBackground(Color.RED);
@@ -507,6 +540,7 @@ public class Main extends JFrame {
         lblEstado.setText("Estado atual: " + estadoAtual.name());
         lblBinario.setText("Binário: " + estadoAtual.getBinario() + "  [A_V, A_A, A_R, B_V, B_A, B_R, P_V]");
         lblDescricao.setText("Descrição: " + estadoAtual.getDescricao());
+        lblTempos.setText(controlador.getDescricaoTempos());
     }
 
     private void desligarTodasAsLuzes() {
@@ -579,6 +613,7 @@ public class Main extends JFrame {
         if (painelInfo != null) painelInfo.setBackground(fundoPainel);
         if (painelControle != null) painelControle.setBackground(fundoPainel);
         if (painelHistorico != null) painelHistorico.setBackground(fundoPainel);
+        if (painelCampos != null) painelCampos.setBackground(fundoPainel);
 
         if (lblTitulo != null) lblTitulo.setForeground(texto);
         if (lblEstado != null) lblEstado.setForeground(texto);
@@ -586,12 +621,20 @@ public class Main extends JFrame {
         if (lblDescricao != null) lblDescricao.setForeground(texto);
         if (lblRegra != null) lblRegra.setForeground(texto);
         if (lblContagem != null) lblContagem.setForeground(texto);
+        if (lblTempos != null) lblTempos.setForeground(texto);
+        if (lblModoOperacao != null) lblModoOperacao.setForeground(texto);
+        if (lblPrioridade != null) lblPrioridade.setForeground(texto);
 
         configurarCheckBox(chkViaA, fundoPainel, texto);
         configurarCheckBox(chkViaB, fundoPainel, texto);
         configurarCheckBox(chkPedestre, fundoPainel, texto);
         configurarCheckBox(chkEmergencia, fundoPainel, texto);
         configurarCheckBox(chkModoNoturno, fundoPainel, texto);
+
+        if (cmbModoOperacao != null) {
+            cmbModoOperacao.setBackground(fundoSecundario);
+            cmbModoOperacao.setForeground(texto);
+        }
 
         if (cmbPrioridade != null) {
             cmbPrioridade.setBackground(fundoSecundario);
