@@ -22,8 +22,25 @@ public class ControladorSemaforo {
         }
     }
 
+    public enum ModoOperacao {
+        CRUZAMENTO("Cruzamento"),
+        VIAS_PARALELAS("Vias paralelas");
+
+        private final String descricao;
+
+        ModoOperacao(String descricao) {
+            this.descricao = descricao;
+        }
+
+        @Override
+        public String toString() {
+            return descricao;
+        }
+    }
+
     private boolean ultimaPreferenciaFoiA = false;
     private ModoPrioridade modoPrioridade = ModoPrioridade.ALTERNADA;
+    private ModoOperacao modoOperacao = ModoOperacao.CRUZAMENTO;
 
     public void setModoPrioridade(ModoPrioridade modoPrioridade) {
         this.modoPrioridade = modoPrioridade;
@@ -33,18 +50,103 @@ public class ControladorSemaforo {
         return modoPrioridade;
     }
 
+    public void setModoOperacao(ModoOperacao modoOperacao) {
+        this.modoOperacao = modoOperacao;
+    }
+
+    public ModoOperacao getModoOperacao() {
+        return modoOperacao;
+    }
+
     public void resetar() {
         ultimaPreferenciaFoiA = false;
         modoPrioridade = ModoPrioridade.ALTERNADA;
+        modoOperacao = ModoOperacao.CRUZAMENTO;
     }
 
-    public EstadoSemaforo decidirDestino(boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
+    public EstadoSemaforo decidirDestino(EstadoSemaforo atual, boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
+        List<EstadoSemaforo> sequencia = montarSequencia(atual, viaA, viaB, pedestre, emergencia);
+        if (sequencia.isEmpty()) {
+            return atual;
+        }
+        return sequencia.get(sequencia.size() - 1);
+    }
+
+    public List<EstadoSemaforo> montarSequencia(EstadoSemaforo atual, boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
+        List<EstadoSemaforo> sequencia = new ArrayList<EstadoSemaforo>();
+
         if (emergencia) {
-            return EstadoSemaforo.EMERGENCIA;
+            sequencia.add(EstadoSemaforo.EMERGENCIA);
+            return sequencia;
+        }
+
+        if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
+            montarSequenciaParalela(sequencia, atual, pedestre);
+        } else {
+            montarSequenciaCruzamento(sequencia, atual, viaA, viaB, pedestre);
+        }
+
+        return sequencia;
+    }
+
+    private void montarSequenciaParalela(List<EstadoSemaforo> sequencia, EstadoSemaforo atual, boolean pedestre) {
+        if (atual == EstadoSemaforo.PEDESTRE) {
+            sequencia.add(EstadoSemaforo.AB_VERDE);
+            return;
+        }
+
+        if (atual != EstadoSemaforo.AB_VERDE && atual != EstadoSemaforo.AB_AMARELO) {
+            if (pedestre) {
+                sequencia.add(EstadoSemaforo.AB_VERDE);
+                sequencia.add(EstadoSemaforo.AB_AMARELO);
+                sequencia.add(EstadoSemaforo.PEDESTRE);
+                sequencia.add(EstadoSemaforo.AB_VERDE);
+            } else {
+                sequencia.add(EstadoSemaforo.AB_VERDE);
+            }
+            return;
         }
 
         if (pedestre) {
-            return EstadoSemaforo.PEDESTRE;
+            if (atual == EstadoSemaforo.AB_VERDE) {
+                sequencia.add(EstadoSemaforo.AB_AMARELO);
+            }
+            sequencia.add(EstadoSemaforo.PEDESTRE);
+            sequencia.add(EstadoSemaforo.AB_VERDE);
+        } else {
+            sequencia.add(EstadoSemaforo.AB_VERDE);
+        }
+    }
+
+    private void montarSequenciaCruzamento(List<EstadoSemaforo> sequencia, EstadoSemaforo atual, boolean viaA, boolean viaB, boolean pedestre) {
+        EstadoSemaforo estadoBase = normalizarEstadoCruzamento(atual, viaA, viaB);
+
+        if (estadoBase == EstadoSemaforo.A_VERDE) {
+            montarPartindoDeA(sequencia, viaA, viaB, pedestre);
+        } else {
+            montarPartindoDeB(sequencia, viaA, viaB, pedestre);
+        }
+    }
+
+    private EstadoSemaforo normalizarEstadoCruzamento(EstadoSemaforo atual, boolean viaA, boolean viaB) {
+        if (atual == EstadoSemaforo.A_VERDE || atual == EstadoSemaforo.A_AMARELO) {
+            return EstadoSemaforo.A_VERDE;
+        }
+
+        if (atual == EstadoSemaforo.B_VERDE || atual == EstadoSemaforo.B_AMARELO) {
+            return EstadoSemaforo.B_VERDE;
+        }
+
+        return escolherViaAposPedestreOuInicio(viaA, viaB);
+    }
+
+    private EstadoSemaforo escolherViaAposPedestreOuInicio(boolean viaA, boolean viaB) {
+        if (viaA && !viaB) {
+            return EstadoSemaforo.A_VERDE;
+        }
+
+        if (viaB && !viaA) {
+            return EstadoSemaforo.B_VERDE;
         }
 
         if (viaA && viaB) {
@@ -64,53 +166,89 @@ public class ControladorSemaforo {
             }
         }
 
-        if (viaA) {
-            return EstadoSemaforo.A_VERDE;
-        }
-
-        if (viaB) {
+        if (modoPrioridade == ModoPrioridade.VIA_B) {
             return EstadoSemaforo.B_VERDE;
         }
 
         return EstadoSemaforo.A_VERDE;
     }
 
-    public List<EstadoSemaforo> montarSequencia(EstadoSemaforo atual, boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
-        EstadoSemaforo destino = decidirDestino(viaA, viaB, pedestre, emergencia);
-        List<EstadoSemaforo> sequencia = new ArrayList<EstadoSemaforo>();
-
-        if (atual == destino) {
-            sequencia.add(destino);
-            return sequencia;
+    private EstadoSemaforo escolherRetornoAposPedestre(boolean viaA, boolean viaB, EstadoSemaforo preferencial) {
+        if (viaA && !viaB) {
+            return EstadoSemaforo.A_VERDE;
         }
 
-        if (destino == EstadoSemaforo.EMERGENCIA) {
-            sequencia.add(EstadoSemaforo.EMERGENCIA);
-            return sequencia;
+        if (viaB && !viaA) {
+            return EstadoSemaforo.B_VERDE;
         }
 
-        if (atual == EstadoSemaforo.A_VERDE && destino != EstadoSemaforo.A_VERDE) {
-            sequencia.add(EstadoSemaforo.A_AMARELO);
-        } else if (atual == EstadoSemaforo.B_VERDE && destino != EstadoSemaforo.B_VERDE) {
-            sequencia.add(EstadoSemaforo.B_AMARELO);
+        if (viaA && viaB) {
+            return preferencial;
         }
 
-        sequencia.add(destino);
-        return sequencia;
+        return preferencial;
+    }
+
+    private void montarPartindoDeA(List<EstadoSemaforo> sequencia, boolean viaA, boolean viaB, boolean pedestre) {
+        if (!viaB && !pedestre) {
+            sequencia.add(EstadoSemaforo.A_VERDE);
+            return;
+        }
+
+        sequencia.add(EstadoSemaforo.A_AMARELO);
+
+        if (viaB) {
+            sequencia.add(EstadoSemaforo.B_VERDE);
+
+            if (pedestre) {
+                sequencia.add(EstadoSemaforo.B_AMARELO);
+                sequencia.add(EstadoSemaforo.PEDESTRE);
+                sequencia.add(escolherRetornoAposPedestre(viaA, viaB, EstadoSemaforo.A_VERDE));
+            }
+        } else if (pedestre) {
+            sequencia.add(EstadoSemaforo.PEDESTRE);
+            sequencia.add(escolherRetornoAposPedestre(viaA, viaB, EstadoSemaforo.A_VERDE));
+        }
+    }
+
+    private void montarPartindoDeB(List<EstadoSemaforo> sequencia, boolean viaA, boolean viaB, boolean pedestre) {
+        if (!viaA && !pedestre) {
+            sequencia.add(EstadoSemaforo.B_VERDE);
+            return;
+        }
+
+        sequencia.add(EstadoSemaforo.B_AMARELO);
+
+        if (viaA) {
+            sequencia.add(EstadoSemaforo.A_VERDE);
+
+            if (pedestre) {
+                sequencia.add(EstadoSemaforo.A_AMARELO);
+                sequencia.add(EstadoSemaforo.PEDESTRE);
+                sequencia.add(escolherRetornoAposPedestre(viaA, viaB, EstadoSemaforo.B_VERDE));
+            }
+        } else if (pedestre) {
+            sequencia.add(EstadoSemaforo.PEDESTRE);
+            sequencia.add(escolherRetornoAposPedestre(viaA, viaB, EstadoSemaforo.B_VERDE));
+        }
     }
 
     public int getDuracaoEstado(EstadoSemaforo estado) {
         switch (estado) {
             case A_VERDE:
             case B_VERDE:
-                return 5;
+                return 6;
+
+            case AB_VERDE:
+                return 8;
 
             case A_AMARELO:
             case B_AMARELO:
+            case AB_AMARELO:
                 return 2;
 
             case PEDESTRE:
-                return 4;
+                return 5;
 
             case EMERGENCIA:
                 return 3;
@@ -120,35 +258,45 @@ public class ControladorSemaforo {
         }
     }
 
+    public String getDescricaoTempos() {
+        if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
+            return "Tempos: verde conjunto = 8s | amarelo conjunto = 2s | pedestre = 5s";
+        }
+        return "Tempos: verde = 6s | amarelo = 2s | pedestre = 5s";
+    }
+
     public String explicarRegra(boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
         if (emergencia) {
             return "Regra aplicada: modo emergência ativado, então todas as vias ficam em vermelho.";
         }
 
-        if (pedestre) {
-            return "Regra aplicada: há pedestre aguardando, então o sistema prioriza a travessia.";
+        if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
+            if (pedestre) {
+                return "Regra aplicada: no modo vias paralelas, as vias A e B ficam verdes juntas e depois intercalam com o pedestre.";
+            }
+            return "Regra aplicada: no modo vias paralelas, as vias A e B funcionam simultaneamente.";
+        }
+
+        if (viaA && viaB && pedestre) {
+            return "Regra aplicada: no modo cruzamento, a Via A intercala com a Via B e com o pedestre.";
         }
 
         if (viaA && viaB) {
-            if (modoPrioridade == ModoPrioridade.VIA_A) {
-                return "Regra aplicada: há veículos nas duas vias, e a configuração atual prioriza a Via A.";
-            }
+            return "Regra aplicada: no modo cruzamento, as vias A e B se alternam.";
+        }
 
-            if (modoPrioridade == ModoPrioridade.VIA_B) {
-                return "Regra aplicada: há veículos nas duas vias, e a configuração atual prioriza a Via B.";
-            }
-
-            return "Regra aplicada: há veículos nas duas vias, então o sistema alterna a prioridade entre A e B.";
+        if (pedestre) {
+            return "Regra aplicada: no modo cruzamento, a fase de pedestre entra no ciclo.";
         }
 
         if (viaA) {
-            return "Regra aplicada: há veículos apenas na via A, então a Via A recebe verde.";
+            return "Regra aplicada: demanda apenas na Via A.";
         }
 
         if (viaB) {
-            return "Regra aplicada: há veículos apenas na via B, então a Via B recebe verde.";
+            return "Regra aplicada: demanda apenas na Via B.";
         }
 
-        return "Regra aplicada: sem veículos e sem pedestres, o sistema mantém a Via A como padrão.";
+        return "Regra aplicada: sem novas demandas, o sistema mantém o comportamento padrão do modo selecionado.";
     }
 }
