@@ -5,6 +5,8 @@ public enum EstadoSemaforo {
     A_AMARELO("Via A amarela / Via B vermelha", "0100010"),
     B_VERDE("Via A vermelha / Via B verde", "0011000"),
     B_AMARELO("Via A vermelha / Via B amarela", "0010100"),
+    AB_VERDE("Vias A e B verdes simultaneamente", "1001000"),
+    AB_AMARELO("Vias A e B amarelas simultaneamente", "0100100"),
     PEDESTRE("Pedestre liberado / Carros parados", "0010011"),
     EMERGENCIA("Modo emergência / Todas as vias em vermelho", "0010010");
 
