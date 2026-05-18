@@ -1,11 +1,17 @@
 package semaforo;
 
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -32,11 +38,7 @@ public class Main extends JFrame {
     private final ControladorSemaforo controlador = new ControladorSemaforo();
     private EstadoSemaforo estadoAtual = EstadoSemaforo.A_VERDE;
 
-    private final Color COR_DESLIGADA = new Color(60, 60, 60);
-    private final Color COR_FUNDO_CLARO = new Color(245, 245, 245);
-    private final Color COR_PAINEL_CLARO = new Color(238, 238, 238);
-    private final Color COR_TITULO = new Color(25, 25, 25);
-    private final Color COR_CARCACA = new Color(30, 30, 30);
+    private final Color COR_DESLIGADA = new Color(70, 74, 82);
 
     private boolean modoAutomatico = false;
     private boolean animando = false;
@@ -63,17 +65,18 @@ public class Main extends JFrame {
     private JPanel painelCampos;
 
     private JLabel lblTitulo;
+    private JLabel lblSubtitulo;
 
-    private JPanel aVermelho;
-    private JPanel aAmarelo;
-    private JPanel aVerde;
+    private LuzCircular aVermelho;
+    private LuzCircular aAmarelo;
+    private LuzCircular aVerde;
 
-    private JPanel bVermelho;
-    private JPanel bAmarelo;
-    private JPanel bVerde;
+    private LuzCircular bVermelho;
+    private LuzCircular bAmarelo;
+    private LuzCircular bVerde;
 
-    private JPanel pVermelho;
-    private JPanel pVerde;
+    private LuzCircular pVermelho;
+    private LuzCircular pVerde;
 
     private JCheckBox chkViaA;
     private JCheckBox chkViaB;
@@ -103,10 +106,10 @@ public class Main extends JFrame {
 
     public Main() {
         setTitle("Sem\u00E1foro Inteligente");
-        setSize(1360, 780);
+        setSize(1380, 820);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(12, 12));
+        setLayout(new BorderLayout(14, 14));
 
         add(criarTitulo(), BorderLayout.NORTH);
         add(criarCentro(), BorderLayout.CENTER);
@@ -120,26 +123,54 @@ public class Main extends JFrame {
     }
 
     private JPanel criarTitulo() {
-        painelTitulo = new JPanel(new BorderLayout());
-        painelTitulo.setBorder(new EmptyBorder(12, 20, 12, 20));
+        painelTitulo = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+                GradientPaint gp = new GradientPaint(
+                    0, 0, new Color(31, 41, 55),
+                    getWidth(), getHeight(), new Color(17, 24, 39)
+                );
+                g2.setPaint(gp);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        painelTitulo.setBorder(new EmptyBorder(18, 24, 18, 24));
+
+        JPanel conteudo = new JPanel();
+        conteudo.setOpaque(false);
+        conteudo.setLayout(new BoxLayout(conteudo, BoxLayout.Y_AXIS));
 
         lblTitulo = new JLabel("Sistema de Sem\u00E1foro Inteligente", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
+        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        painelTitulo.add(lblTitulo, BorderLayout.CENTER);
+        lblSubtitulo = new JLabel("Simula\u00E7\u00E3o visual com estados, tempo, prioridade e emerg\u00EAncia", SwingConstants.CENTER);
+        lblSubtitulo.setFont(new Font("Arial", Font.PLAIN, 14));
+        lblSubtitulo.setForeground(new Color(226, 232, 240));
+        lblSubtitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        conteudo.add(lblTitulo);
+        conteudo.add(Box.createRigidArea(new Dimension(0, 6)));
+        conteudo.add(lblSubtitulo);
+
+        painelTitulo.add(conteudo, BorderLayout.CENTER);
         return painelTitulo;
     }
 
     private JPanel criarCentro() {
-        painelCentro = new JPanel(new BorderLayout(12, 12));
-        painelCentro.setBorder(new EmptyBorder(0, 12, 12, 0));
+        painelCentro = new JPanel(new BorderLayout(14, 14));
+        painelCentro.setBorder(new EmptyBorder(0, 14, 14, 0));
         painelCentro.add(criarPainelSemaforos(), BorderLayout.CENTER);
         painelCentro.add(criarPainelInfo(), BorderLayout.SOUTH);
         return painelCentro;
     }
 
     private JPanel criarPainelSemaforos() {
-        painelSemaforos = new JPanel(new GridLayout(1, 3, 12, 12));
+        painelSemaforos = new JPanel(new GridLayout(1, 3, 14, 14));
         painelSemaforos.add(criarSemaforoViaA());
         painelSemaforos.add(criarSemaforoViaB());
         painelSemaforos.add(criarSemaforoPedestre());
@@ -147,17 +178,17 @@ public class Main extends JFrame {
     }
 
     private JPanel criarSemaforoViaA() {
-        painelViaA = criarPainelSemaforoBase("Via A");
+        painelViaA = criarCardSemaforo("Via A");
 
         JPanel carcaca = criarCarcacaSemaforo(3);
-        aVermelho = criarLuz();
-        aAmarelo = criarLuz();
-        aVerde = criarLuz();
+        aVermelho = new LuzCircular();
+        aAmarelo = new LuzCircular();
+        aVerde = new LuzCircular();
 
         carcaca.add(aVermelho);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
         carcaca.add(aAmarelo);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
         carcaca.add(aVerde);
 
         painelViaA.add(Box.createVerticalGlue());
@@ -168,17 +199,17 @@ public class Main extends JFrame {
     }
 
     private JPanel criarSemaforoViaB() {
-        painelViaB = criarPainelSemaforoBase("Via B");
+        painelViaB = criarCardSemaforo("Via B");
 
         JPanel carcaca = criarCarcacaSemaforo(3);
-        bVermelho = criarLuz();
-        bAmarelo = criarLuz();
-        bVerde = criarLuz();
+        bVermelho = new LuzCircular();
+        bAmarelo = new LuzCircular();
+        bVerde = new LuzCircular();
 
         carcaca.add(bVermelho);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
         carcaca.add(bAmarelo);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
         carcaca.add(bVerde);
 
         painelViaB.add(Box.createVerticalGlue());
@@ -189,14 +220,14 @@ public class Main extends JFrame {
     }
 
     private JPanel criarSemaforoPedestre() {
-        painelPedestre = criarPainelSemaforoBase("Pedestre");
+        painelPedestre = criarCardSemaforo("Pedestre");
 
         JPanel carcaca = criarCarcacaSemaforo(2);
-        pVermelho = criarLuz();
-        pVerde = criarLuz();
+        pVermelho = new LuzCircular();
+        pVerde = new LuzCircular();
 
         carcaca.add(pVermelho);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
         carcaca.add(pVerde);
 
         painelPedestre.add(Box.createVerticalGlue());
@@ -206,49 +237,39 @@ public class Main extends JFrame {
         return painelPedestre;
     }
 
-    private JPanel criarPainelSemaforoBase(String titulo) {
+    private JPanel criarCardSemaforo(String titulo) {
         JPanel painel = new JPanel();
         painel.setLayout(new BoxLayout(painel, BoxLayout.Y_AXIS));
-        painel.setBorder(criarBordaTitulo(titulo));
-        painel.setPreferredSize(new Dimension(300, 430));
+        painel.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo(titulo),
+            new EmptyBorder(16, 16, 16, 16)
+        ));
         return painel;
     }
 
     private JPanel criarCarcacaSemaforo(int quantidadeLuzes) {
         JPanel carcaca = new JPanel();
         carcaca.setLayout(new BoxLayout(carcaca, BoxLayout.Y_AXIS));
-        carcaca.setBackground(COR_CARCACA);
+        carcaca.setBackground(new Color(24, 24, 27));
         carcaca.setOpaque(true);
         carcaca.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.BLACK, 2),
-            BorderFactory.createEmptyBorder(14, 14, 14, 14)
+            BorderFactory.createLineBorder(new Color(15, 23, 42), 2),
+            new EmptyBorder(16, 16, 16, 16)
         ));
 
-        int altura = quantidadeLuzes == 3 ? 332 : 218;
-        carcaca.setMaximumSize(new Dimension(122, altura));
-        carcaca.setPreferredSize(new Dimension(122, altura));
+        int altura = quantidadeLuzes == 3 ? 360 : 238;
+        carcaca.setMaximumSize(new Dimension(132, altura));
+        carcaca.setPreferredSize(new Dimension(132, altura));
         carcaca.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         return carcaca;
     }
 
-    private JPanel criarLuz() {
-        JPanel luz = new JPanel();
-        luz.setPreferredSize(new Dimension(90, 90));
-        luz.setMaximumSize(new Dimension(90, 90));
-        luz.setMinimumSize(new Dimension(90, 90));
-        luz.setBackground(COR_DESLIGADA);
-        luz.setOpaque(true);
-        luz.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
-        luz.setAlignmentX(Component.CENTER_ALIGNMENT);
-        return luz;
-    }
-
     private JPanel criarPainelInfo() {
-        painelInfo = new JPanel(new GridLayout(6, 1, 4, 4));
+        painelInfo = new JPanel(new GridLayout(6, 1, 6, 6));
         painelInfo.setBorder(BorderFactory.createCompoundBorder(
             criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
-            new EmptyBorder(8, 10, 8, 10)
+            new EmptyBorder(12, 14, 12, 14)
         ));
 
         Font fonteInfo = new Font("Arial", Font.PLAIN, 15);
@@ -278,15 +299,15 @@ public class Main extends JFrame {
     }
 
     private JPanel criarPainelControle() {
-        painelControle = new JPanel(new BorderLayout(10, 10));
-        painelControle.setPreferredSize(new Dimension(360, 700));
-        painelControle.setBorder(new EmptyBorder(0, 0, 12, 12));
+        painelControle = new JPanel(new BorderLayout(12, 12));
+        painelControle.setPreferredSize(new Dimension(380, 730));
+        painelControle.setBorder(new EmptyBorder(0, 0, 14, 14));
 
         painelCampos = new JPanel();
         painelCampos.setLayout(new BoxLayout(painelCampos, BoxLayout.Y_AXIS));
         painelCampos.setBorder(BorderFactory.createCompoundBorder(
             criarBordaTitulo("Controles"),
-            new EmptyBorder(10, 10, 10, 10)
+            new EmptyBorder(14, 14, 14, 14)
         ));
 
         Font fontePadrao = new Font("Arial", Font.PLAIN, 15);
@@ -311,53 +332,49 @@ public class Main extends JFrame {
 
         cmbModoOperacao = new JComboBox<>(ControladorSemaforo.ModoOperacao.values());
         cmbModoOperacao.setFont(fontePadrao);
-        cmbModoOperacao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        cmbModoOperacao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
         lblPrioridade = new JLabel("Prioridade das vias:");
         lblPrioridade.setFont(fonteLabel);
 
         cmbPrioridade = new JComboBox<>(ControladorSemaforo.ModoPrioridade.values());
         cmbPrioridade.setFont(fontePadrao);
-        cmbPrioridade.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        cmbPrioridade.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
         btnSimular = new JButton("Simular ciclo");
         btnAuto = new JButton("Iniciar autom\u00E1tico");
         btnResetar = new JButton("Resetar sistema");
 
-        btnSimular.setFont(new Font("Arial", Font.BOLD, 14));
-        btnAuto.setFont(new Font("Arial", Font.BOLD, 14));
-        btnResetar.setFont(new Font("Arial", Font.BOLD, 14));
-
-        btnSimular.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnAuto.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btnResetar.setAlignmentX(Component.CENTER_ALIGNMENT);
+        configurarBotao(btnSimular);
+        configurarBotao(btnAuto);
+        configurarBotao(btnResetar);
 
         btnSimular.addActionListener(e -> simularCiclo());
         btnAuto.addActionListener(e -> alternarModoAutomatico());
         btnResetar.addActionListener(e -> resetarSistema());
 
         painelCampos.add(chkViaA);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 8)));
         painelCampos.add(chkViaB);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 8)));
         painelCampos.add(chkPedestre);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 8)));
         painelCampos.add(chkEmergencia);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 14)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 18)));
         painelCampos.add(lblModoOperacao);
         painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(cmbModoOperacao);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 14)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 16)));
         painelCampos.add(lblPrioridade);
         painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(cmbPrioridade);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 14)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 16)));
         painelCampos.add(chkModoNoturno);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 18)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 20)));
         painelCampos.add(btnSimular);
         painelCampos.add(Box.createRigidArea(new Dimension(0, 10)));
         painelCampos.add(btnAuto);
@@ -369,14 +386,15 @@ public class Main extends JFrame {
         txtHistorico.setLineWrap(true);
         txtHistorico.setWrapStyleWord(true);
         txtHistorico.setFont(new Font("Consolas", Font.PLAIN, 14));
-        txtHistorico.setBorder(new EmptyBorder(8, 8, 8, 8));
+        txtHistorico.setBorder(new EmptyBorder(10, 10, 10, 10));
 
         scrollHistorico = new JScrollPane(txtHistorico);
+        scrollHistorico.setBorder(BorderFactory.createEmptyBorder());
 
         painelHistorico = new JPanel(new BorderLayout());
         painelHistorico.setBorder(BorderFactory.createCompoundBorder(
             criarBordaTitulo("Hist\u00F3rico"),
-            new EmptyBorder(6, 6, 6, 6)
+            new EmptyBorder(8, 8, 8, 8)
         ));
         painelHistorico.add(scrollHistorico, BorderLayout.CENTER);
 
@@ -545,22 +563,22 @@ public class Main extends JFrame {
         }
 
         amareloPiscaLigado = true;
-        aAmarelo.setBackground(Color.YELLOW);
-        bAmarelo.setBackground(Color.YELLOW);
-        pVermelho.setBackground(Color.RED);
+        aAmarelo.setCor(Color.YELLOW);
+        bAmarelo.setCor(Color.YELLOW);
+        pVermelho.setCor(Color.RED);
 
-        timerPiscaEmergencia = new Timer(500, e -> {
+        timerPiscaEmergencia = new Timer(450, e -> {
             amareloPiscaLigado = !amareloPiscaLigado;
 
             if (amareloPiscaLigado) {
-                aAmarelo.setBackground(Color.YELLOW);
-                bAmarelo.setBackground(Color.YELLOW);
+                aAmarelo.setCor(Color.YELLOW);
+                bAmarelo.setCor(Color.YELLOW);
             } else {
-                aAmarelo.setBackground(COR_DESLIGADA);
-                bAmarelo.setBackground(COR_DESLIGADA);
+                aAmarelo.setCor(COR_DESLIGADA);
+                bAmarelo.setCor(COR_DESLIGADA);
             }
 
-            pVermelho.setBackground(Color.RED);
+            pVermelho.setCor(Color.RED);
         });
 
         timerPiscaEmergencia.start();
@@ -582,49 +600,49 @@ public class Main extends JFrame {
 
         switch (estadoAtual) {
             case A_VERDE:
-                aVerde.setBackground(Color.GREEN);
-                bVermelho.setBackground(Color.RED);
-                pVermelho.setBackground(Color.RED);
+                aVerde.setCor(new Color(34, 197, 94));
+                bVermelho.setCor(new Color(239, 68, 68));
+                pVermelho.setCor(new Color(239, 68, 68));
                 break;
 
             case A_AMARELO:
-                aAmarelo.setBackground(Color.YELLOW);
-                bVermelho.setBackground(Color.RED);
-                pVermelho.setBackground(Color.RED);
+                aAmarelo.setCor(new Color(250, 204, 21));
+                bVermelho.setCor(new Color(239, 68, 68));
+                pVermelho.setCor(new Color(239, 68, 68));
                 break;
 
             case B_VERDE:
-                aVermelho.setBackground(Color.RED);
-                bVerde.setBackground(Color.GREEN);
-                pVermelho.setBackground(Color.RED);
+                aVermelho.setCor(new Color(239, 68, 68));
+                bVerde.setCor(new Color(34, 197, 94));
+                pVermelho.setCor(new Color(239, 68, 68));
                 break;
 
             case B_AMARELO:
-                aVermelho.setBackground(Color.RED);
-                bAmarelo.setBackground(Color.YELLOW);
-                pVermelho.setBackground(Color.RED);
+                aVermelho.setCor(new Color(239, 68, 68));
+                bAmarelo.setCor(new Color(250, 204, 21));
+                pVermelho.setCor(new Color(239, 68, 68));
                 break;
 
             case AB_VERDE:
-                aVerde.setBackground(Color.GREEN);
-                bVerde.setBackground(Color.GREEN);
-                pVermelho.setBackground(Color.RED);
+                aVerde.setCor(new Color(34, 197, 94));
+                bVerde.setCor(new Color(34, 197, 94));
+                pVermelho.setCor(new Color(239, 68, 68));
                 break;
 
             case AB_AMARELO:
-                aAmarelo.setBackground(Color.YELLOW);
-                bAmarelo.setBackground(Color.YELLOW);
-                pVermelho.setBackground(Color.RED);
+                aAmarelo.setCor(new Color(250, 204, 21));
+                bAmarelo.setCor(new Color(250, 204, 21));
+                pVermelho.setCor(new Color(239, 68, 68));
                 break;
 
             case PEDESTRE:
-                aVermelho.setBackground(Color.RED);
-                bVermelho.setBackground(Color.RED);
-                pVerde.setBackground(Color.GREEN);
+                aVermelho.setCor(new Color(239, 68, 68));
+                bVermelho.setCor(new Color(239, 68, 68));
+                pVerde.setCor(new Color(34, 197, 94));
                 break;
 
             case EMERGENCIA:
-                pVermelho.setBackground(Color.RED);
+                pVermelho.setCor(new Color(239, 68, 68));
                 iniciarPiscaEmergencia();
                 break;
         }
@@ -636,16 +654,16 @@ public class Main extends JFrame {
     }
 
     private void desligarTodasAsLuzes() {
-        aVermelho.setBackground(COR_DESLIGADA);
-        aAmarelo.setBackground(COR_DESLIGADA);
-        aVerde.setBackground(COR_DESLIGADA);
+        aVermelho.setCor(COR_DESLIGADA);
+        aAmarelo.setCor(COR_DESLIGADA);
+        aVerde.setCor(COR_DESLIGADA);
 
-        bVermelho.setBackground(COR_DESLIGADA);
-        bAmarelo.setBackground(COR_DESLIGADA);
-        bVerde.setBackground(COR_DESLIGADA);
+        bVermelho.setCor(COR_DESLIGADA);
+        bAmarelo.setCor(COR_DESLIGADA);
+        bVerde.setCor(COR_DESLIGADA);
 
-        pVermelho.setBackground(COR_DESLIGADA);
-        pVerde.setBackground(COR_DESLIGADA);
+        pVermelho.setCor(COR_DESLIGADA);
+        pVerde.setCor(COR_DESLIGADA);
     }
 
     private void registrarHistorico(String mensagem) {
@@ -658,15 +676,15 @@ public class Main extends JFrame {
         Color corTexto;
 
         if (chkModoNoturno != null && chkModoNoturno.isSelected()) {
-            corLinha = new Color(180, 180, 180);
+            corLinha = new Color(100, 116, 139);
             corTexto = Color.WHITE;
         } else {
-            corLinha = new Color(120, 120, 120);
-            corTexto = Color.BLACK;
+            corLinha = new Color(148, 163, 184);
+            corTexto = new Color(30, 41, 59);
         }
 
         TitledBorder borda = BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(corLinha),
+            BorderFactory.createLineBorder(corLinha, 1),
             titulo
         );
         borda.setTitleColor(corTexto);
@@ -682,19 +700,22 @@ public class Main extends JFrame {
         Color fundoSecundario;
         Color texto;
         Color fundoTitulo;
+        Color textoSub;
 
         if (noturno) {
-            fundoJanela = new Color(24, 24, 24);
-            fundoPainel = new Color(40, 40, 40);
-            fundoSecundario = new Color(55, 55, 55);
+            fundoJanela = new Color(15, 23, 42);
+            fundoPainel = new Color(30, 41, 59);
+            fundoSecundario = new Color(51, 65, 85);
             texto = Color.WHITE;
-            fundoTitulo = new Color(18, 18, 18);
+            fundoTitulo = new Color(17, 24, 39);
+            textoSub = new Color(203, 213, 225);
         } else {
-            fundoJanela = COR_FUNDO_CLARO;
-            fundoPainel = COR_PAINEL_CLARO;
-            fundoSecundario = Color.WHITE;
-            texto = Color.BLACK;
-            fundoTitulo = COR_TITULO;
+            fundoJanela = new Color(241, 245, 249);
+            fundoPainel = Color.WHITE;
+            fundoSecundario = new Color(248, 250, 252);
+            texto = new Color(15, 23, 42);
+            fundoTitulo = new Color(17, 24, 39);
+            textoSub = new Color(226, 232, 240);
         }
 
         getContentPane().setBackground(fundoJanela);
@@ -712,6 +733,8 @@ public class Main extends JFrame {
         if (painelCampos != null) painelCampos.setBackground(fundoPainel);
 
         if (lblTitulo != null) lblTitulo.setForeground(Color.WHITE);
+        if (lblSubtitulo != null) lblSubtitulo.setForeground(textoSub);
+
         if (lblEstado != null) lblEstado.setForeground(texto);
         if (lblBinario != null) lblBinario.setForeground(texto);
         if (lblDescricao != null) lblDescricao.setForeground(texto);
@@ -727,19 +750,8 @@ public class Main extends JFrame {
         configurarCheckBox(chkEmergencia, fundoPainel, texto);
         configurarCheckBox(chkModoNoturno, fundoPainel, texto);
 
-        if (cmbModoOperacao != null) {
-            cmbModoOperacao.setBackground(fundoSecundario);
-            cmbModoOperacao.setForeground(texto);
-        }
-
-        if (cmbPrioridade != null) {
-            cmbPrioridade.setBackground(fundoSecundario);
-            cmbPrioridade.setForeground(texto);
-        }
-
-        configurarBotao(btnSimular, fundoSecundario, texto);
-        configurarBotao(btnAuto, fundoSecundario, texto);
-        configurarBotao(btnResetar, fundoSecundario, texto);
+        configurarCombo(cmbModoOperacao, fundoSecundario, texto);
+        configurarCombo(cmbPrioridade, fundoSecundario, texto);
 
         if (txtHistorico != null) {
             txtHistorico.setBackground(fundoSecundario);
@@ -752,7 +764,6 @@ public class Main extends JFrame {
         }
 
         atualizarBordas();
-
         repaint();
         revalidate();
     }
@@ -765,32 +776,116 @@ public class Main extends JFrame {
         }
     }
 
-    private void configurarBotao(JButton botao, Color fundo, Color texto) {
-        if (botao != null) {
-            botao.setBackground(fundo);
-            botao.setForeground(texto);
-            botao.setFocusPainted(false);
-            botao.setMaximumSize(new Dimension(180, 36));
-            botao.setPreferredSize(new Dimension(180, 36));
+    private void configurarCombo(JComboBox<?> combo, Color fundo, Color texto) {
+        if (combo != null) {
+            combo.setBackground(fundo);
+            combo.setForeground(texto);
         }
     }
 
-    private void atualizarBordas() {
-        if (painelViaA != null) painelViaA.setBorder(criarBordaTitulo("Via A"));
-        if (painelViaB != null) painelViaB.setBorder(criarBordaTitulo("Via B"));
-        if (painelPedestre != null) painelPedestre.setBorder(criarBordaTitulo("Pedestre"));
-        if (painelInfo != null) painelInfo.setBorder(BorderFactory.createCompoundBorder(
-            criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
+    private void configurarBotao(JButton botao) {
+        botao.setFocusPainted(false);
+        botao.setAlignmentX(Component.CENTER_ALIGNMENT);
+        botao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 42));
+        botao.setPreferredSize(new Dimension(220, 42));
+        botao.setMargin(new Insets(10, 16, 10, 16));
+        botao.setBackground(new Color(37, 99, 235));
+        botao.setForeground(Color.WHITE);
+        botao.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(29, 78, 216), 1),
             new EmptyBorder(8, 10, 8, 10)
         ));
-        if (painelCampos != null) painelCampos.setBorder(BorderFactory.createCompoundBorder(
-            criarBordaTitulo("Controles"),
-            new EmptyBorder(10, 10, 10, 10)
-        ));
-        if (painelHistorico != null) painelHistorico.setBorder(BorderFactory.createCompoundBorder(
-            criarBordaTitulo("Hist\u00F3rico"),
-            new EmptyBorder(6, 6, 6, 6)
-        ));
+    }
+
+    private void atualizarBordas() {
+        if (painelViaA != null) {
+            painelViaA.setBorder(BorderFactory.createCompoundBorder(
+                criarBordaTitulo("Via A"),
+                new EmptyBorder(16, 16, 16, 16)
+            ));
+        }
+
+        if (painelViaB != null) {
+            painelViaB.setBorder(BorderFactory.createCompoundBorder(
+                criarBordaTitulo("Via B"),
+                new EmptyBorder(16, 16, 16, 16)
+            ));
+        }
+
+        if (painelPedestre != null) {
+            painelPedestre.setBorder(BorderFactory.createCompoundBorder(
+                criarBordaTitulo("Pedestre"),
+                new EmptyBorder(16, 16, 16, 16)
+            ));
+        }
+
+        if (painelInfo != null) {
+            painelInfo.setBorder(BorderFactory.createCompoundBorder(
+                criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
+                new EmptyBorder(12, 14, 12, 14)
+            ));
+        }
+
+        if (painelCampos != null) {
+            painelCampos.setBorder(BorderFactory.createCompoundBorder(
+                criarBordaTitulo("Controles"),
+                new EmptyBorder(14, 14, 14, 14)
+            ));
+        }
+
+        if (painelHistorico != null) {
+            painelHistorico.setBorder(BorderFactory.createCompoundBorder(
+                criarBordaTitulo("Hist\u00F3rico"),
+                new EmptyBorder(8, 8, 8, 8)
+            ));
+        }
+    }
+
+    private class LuzCircular extends JPanel {
+        private Color corAtual = COR_DESLIGADA;
+
+        public LuzCircular() {
+            setOpaque(false);
+            setPreferredSize(new Dimension(92, 92));
+            setMaximumSize(new Dimension(92, 92));
+            setMinimumSize(new Dimension(92, 92));
+            setAlignmentX(Component.CENTER_ALIGNMENT);
+        }
+
+        public void setCor(Color cor) {
+            this.corAtual = cor;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int margem = 4;
+            int tamanho = Math.min(getWidth(), getHeight()) - (margem * 2);
+
+            g2.setColor(new Color(20, 20, 20));
+            g2.fillOval(margem - 2, margem - 2, tamanho + 4, tamanho + 4);
+
+            GradientPaint sombra = new GradientPaint(
+                0, 0, corAtual.brighter(),
+                getWidth(), getHeight(), corAtual.darker()
+            );
+            g2.setPaint(sombra);
+            g2.fillOval(margem, margem, tamanho, tamanho);
+
+            g2.setColor(new Color(255, 255, 255, 90));
+            g2.fillOval(margem + 12, margem + 10, tamanho / 3, tamanho / 4);
+
+            g2.setStroke(new BasicStroke(2f));
+            g2.setColor(new Color(255, 255, 255, 40));
+            g2.drawOval(margem, margem, tamanho, tamanho);
+
+            g2.dispose();
+        }
     }
 
     public static void main(String[] args) {
