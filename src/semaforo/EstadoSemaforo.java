@@ -8,7 +8,7 @@ public enum EstadoSemaforo {
     AB_VERDE("Vias A e B verdes simultaneamente", "1001000"),
     AB_AMARELO("Vias A e B amarelas simultaneamente", "0100100"),
     PEDESTRE("Pedestre liberado / Carros parados", "0010011"),
-    EMERGENCIA("Modo emergência / Todas as vias em vermelho", "0010010");
+    EMERGENCIA("Modo emerg\u00EAncia / amarelos piscando e pedestre fechado", "0100100 <-> 0000000");
 
     private final String descricao;
     private final String binario;

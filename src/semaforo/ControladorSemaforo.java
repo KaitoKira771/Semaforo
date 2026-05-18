@@ -73,7 +73,7 @@ public class ControladorSemaforo {
     }
 
     public List<EstadoSemaforo> montarSequencia(EstadoSemaforo atual, boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
-        List<EstadoSemaforo> sequencia = new ArrayList<EstadoSemaforo>();
+        List<EstadoSemaforo> sequencia = new ArrayList<>();
 
         if (emergencia) {
             sequencia.add(EstadoSemaforo.EMERGENCIA);
@@ -251,7 +251,7 @@ public class ControladorSemaforo {
                 return 5;
 
             case EMERGENCIA:
-                return 3;
+                return 6;
 
             default:
                 return 3;
@@ -260,14 +260,14 @@ public class ControladorSemaforo {
 
     public String getDescricaoTempos() {
         if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
-            return "Tempos: verde conjunto = 8s | amarelo conjunto = 2s | pedestre = 5s";
+            return "Tempos: verde conjunto = 8s | amarelo conjunto = 2s | pedestre = 5s | emerg\u00EAncia = 6s";
         }
-        return "Tempos: verde = 6s | amarelo = 2s | pedestre = 5s";
+        return "Tempos: verde = 6s | amarelo = 2s | pedestre = 5s | emerg\u00EAncia = 6s";
     }
 
     public String explicarRegra(boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
         if (emergencia) {
-            return "Regra aplicada: modo emergência ativado, então todas as vias ficam em vermelho.";
+            return "Regra aplicada: modo emerg\u00EAncia ativado, ent\u00E3o as luzes amarelas das vias piscam e o pedestre permanece fechado.";
         }
 
         if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
@@ -297,6 +297,6 @@ public class ControladorSemaforo {
             return "Regra aplicada: demanda apenas na Via B.";
         }
 
-        return "Regra aplicada: sem novas demandas, o sistema mantém o comportamento padrão do modo selecionado.";
+        return "Regra aplicada: sem novas demandas, o sistema mant\u00E9m o comportamento padr\u00E3o do modo selecionado.";
     }
 }

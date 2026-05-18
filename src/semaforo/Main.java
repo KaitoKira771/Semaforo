@@ -2,11 +2,10 @@ package semaforo;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +24,7 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
 public class Main extends JFrame {
@@ -33,19 +33,24 @@ public class Main extends JFrame {
     private EstadoSemaforo estadoAtual = EstadoSemaforo.A_VERDE;
 
     private final Color COR_DESLIGADA = new Color(60, 60, 60);
+    private final Color COR_FUNDO_CLARO = new Color(245, 245, 245);
+    private final Color COR_PAINEL_CLARO = new Color(238, 238, 238);
+    private final Color COR_TITULO = new Color(25, 25, 25);
+    private final Color COR_CARCACA = new Color(30, 30, 30);
 
     private boolean modoAutomatico = false;
     private boolean animando = false;
+    private boolean amareloPiscaLigado = false;
 
     private int segundosRestantes = 0;
 
     private Timer timerContagem;
     private Timer timerEtapa;
     private Timer timerProximoCiclo;
+    private Timer timerPiscaEmergencia;
 
     private final SimpleDateFormat formatoHora = new SimpleDateFormat("HH:mm:ss");
 
-    // Painéis principais
     private JPanel painelTitulo;
     private JPanel painelCentro;
     private JPanel painelSemaforos;
@@ -57,44 +62,35 @@ public class Main extends JFrame {
     private JPanel painelHistorico;
     private JPanel painelCampos;
 
-    // Título
     private JLabel lblTitulo;
 
-    // Luzes via A
     private JPanel aVermelho;
     private JPanel aAmarelo;
     private JPanel aVerde;
 
-    // Luzes via B
     private JPanel bVermelho;
     private JPanel bAmarelo;
     private JPanel bVerde;
 
-    // Luzes pedestre
     private JPanel pVermelho;
     private JPanel pVerde;
 
-    // Entradas
     private JCheckBox chkViaA;
     private JCheckBox chkViaB;
     private JCheckBox chkPedestre;
     private JCheckBox chkEmergencia;
     private JCheckBox chkModoNoturno;
 
-    // Labels de formulários
     private JLabel lblModoOperacao;
     private JLabel lblPrioridade;
 
-    // Modos
     private JComboBox<ControladorSemaforo.ModoOperacao> cmbModoOperacao;
     private JComboBox<ControladorSemaforo.ModoPrioridade> cmbPrioridade;
 
-    // Botões
     private JButton btnSimular;
     private JButton btnAuto;
     private JButton btnResetar;
 
-    // Informações
     private JLabel lblEstado;
     private JLabel lblBinario;
     private JLabel lblDescricao;
@@ -102,16 +98,15 @@ public class Main extends JFrame {
     private JLabel lblContagem;
     private JLabel lblTempos;
 
-    // Histórico
     private JTextArea txtHistorico;
     private JScrollPane scrollHistorico;
 
     public Main() {
-        setTitle("Semáforo Inteligente");
-        setSize(1280, 740);
+        setTitle("Sem\u00E1foro Inteligente");
+        setSize(1360, 780);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setLayout(new BorderLayout(15, 15));
+        setLayout(new BorderLayout(12, 12));
 
         add(criarTitulo(), BorderLayout.NORTH);
         add(criarCentro(), BorderLayout.CENTER);
@@ -125,91 +120,138 @@ public class Main extends JFrame {
     }
 
     private JPanel criarTitulo() {
-        painelTitulo = new JPanel();
+        painelTitulo = new JPanel(new BorderLayout());
+        painelTitulo.setBorder(new EmptyBorder(12, 20, 12, 20));
 
-        lblTitulo = new JLabel("Sistema de Semáforo Inteligente", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
+        lblTitulo = new JLabel("Sistema de Sem\u00E1foro Inteligente", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Arial", Font.BOLD, 20));
 
-        painelTitulo.add(lblTitulo);
+        painelTitulo.add(lblTitulo, BorderLayout.CENTER);
         return painelTitulo;
     }
 
     private JPanel criarCentro() {
-        painelCentro = new JPanel(new BorderLayout(10, 10));
+        painelCentro = new JPanel(new BorderLayout(12, 12));
+        painelCentro.setBorder(new EmptyBorder(0, 12, 12, 0));
         painelCentro.add(criarPainelSemaforos(), BorderLayout.CENTER);
         painelCentro.add(criarPainelInfo(), BorderLayout.SOUTH);
         return painelCentro;
     }
 
     private JPanel criarPainelSemaforos() {
-        painelSemaforos = new JPanel(new GridLayout(1, 3, 20, 20));
-        painelSemaforos.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
+        painelSemaforos = new JPanel(new GridLayout(1, 3, 12, 12));
         painelSemaforos.add(criarSemaforoViaA());
         painelSemaforos.add(criarSemaforoViaB());
         painelSemaforos.add(criarSemaforoPedestre());
-
         return painelSemaforos;
     }
 
     private JPanel criarSemaforoViaA() {
-        painelViaA = new JPanel();
-        painelViaA.setLayout(new BoxLayout(painelViaA, BoxLayout.Y_AXIS));
+        painelViaA = criarPainelSemaforoBase("Via A");
 
+        JPanel carcaca = criarCarcacaSemaforo(3);
         aVermelho = criarLuz();
         aAmarelo = criarLuz();
         aVerde = criarLuz();
 
-        painelViaA.add(Box.createRigidArea(new Dimension(0, 10)));
-        painelViaA.add(aVermelho);
-        painelViaA.add(aAmarelo);
-        painelViaA.add(aVerde);
+        carcaca.add(aVermelho);
+        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(aAmarelo);
+        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(aVerde);
+
+        painelViaA.add(Box.createVerticalGlue());
+        painelViaA.add(carcaca);
+        painelViaA.add(Box.createVerticalGlue());
 
         return painelViaA;
     }
 
     private JPanel criarSemaforoViaB() {
-        painelViaB = new JPanel();
-        painelViaB.setLayout(new BoxLayout(painelViaB, BoxLayout.Y_AXIS));
+        painelViaB = criarPainelSemaforoBase("Via B");
 
+        JPanel carcaca = criarCarcacaSemaforo(3);
         bVermelho = criarLuz();
         bAmarelo = criarLuz();
         bVerde = criarLuz();
 
-        painelViaB.add(Box.createRigidArea(new Dimension(0, 10)));
-        painelViaB.add(bVermelho);
-        painelViaB.add(bAmarelo);
-        painelViaB.add(bVerde);
+        carcaca.add(bVermelho);
+        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(bAmarelo);
+        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(bVerde);
+
+        painelViaB.add(Box.createVerticalGlue());
+        painelViaB.add(carcaca);
+        painelViaB.add(Box.createVerticalGlue());
 
         return painelViaB;
     }
 
     private JPanel criarSemaforoPedestre() {
-        painelPedestre = new JPanel();
-        painelPedestre.setLayout(new BoxLayout(painelPedestre, BoxLayout.Y_AXIS));
+        painelPedestre = criarPainelSemaforoBase("Pedestre");
 
+        JPanel carcaca = criarCarcacaSemaforo(2);
         pVermelho = criarLuz();
         pVerde = criarLuz();
 
-        painelPedestre.add(Box.createRigidArea(new Dimension(0, 10)));
-        painelPedestre.add(pVermelho);
-        painelPedestre.add(pVerde);
+        carcaca.add(pVermelho);
+        carcaca.add(Box.createRigidArea(new Dimension(0, 10)));
+        carcaca.add(pVerde);
+
+        painelPedestre.add(Box.createVerticalGlue());
+        painelPedestre.add(carcaca);
+        painelPedestre.add(Box.createVerticalGlue());
 
         return painelPedestre;
+    }
+
+    private JPanel criarPainelSemaforoBase(String titulo) {
+        JPanel painel = new JPanel();
+        painel.setLayout(new BoxLayout(painel, BoxLayout.Y_AXIS));
+        painel.setBorder(criarBordaTitulo(titulo));
+        painel.setPreferredSize(new Dimension(300, 430));
+        return painel;
+    }
+
+    private JPanel criarCarcacaSemaforo(int quantidadeLuzes) {
+        JPanel carcaca = new JPanel();
+        carcaca.setLayout(new BoxLayout(carcaca, BoxLayout.Y_AXIS));
+        carcaca.setBackground(COR_CARCACA);
+        carcaca.setOpaque(true);
+        carcaca.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK, 2),
+            BorderFactory.createEmptyBorder(14, 14, 14, 14)
+        ));
+
+        int altura = quantidadeLuzes == 3 ? 332 : 218;
+        carcaca.setMaximumSize(new Dimension(122, altura));
+        carcaca.setPreferredSize(new Dimension(122, altura));
+        carcaca.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        return carcaca;
     }
 
     private JPanel criarLuz() {
         JPanel luz = new JPanel();
         luz.setPreferredSize(new Dimension(90, 90));
         luz.setMaximumSize(new Dimension(90, 90));
+        luz.setMinimumSize(new Dimension(90, 90));
         luz.setBackground(COR_DESLIGADA);
         luz.setOpaque(true);
         luz.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+        luz.setAlignmentX(Component.CENTER_ALIGNMENT);
         return luz;
     }
 
     private JPanel criarPainelInfo() {
-        painelInfo = new JPanel(new GridLayout(6, 1, 5, 5));
+        painelInfo = new JPanel(new GridLayout(6, 1, 4, 4));
+        painelInfo.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
+            new EmptyBorder(8, 10, 8, 10)
+        ));
+
+        Font fonteInfo = new Font("Arial", Font.PLAIN, 15);
 
         lblEstado = new JLabel();
         lblBinario = new JLabel();
@@ -217,6 +259,13 @@ public class Main extends JFrame {
         lblRegra = new JLabel();
         lblContagem = new JLabel();
         lblTempos = new JLabel();
+
+        lblEstado.setFont(fonteInfo);
+        lblBinario.setFont(fonteInfo);
+        lblDescricao.setFont(fonteInfo);
+        lblRegra.setFont(fonteInfo);
+        lblContagem.setFont(fonteInfo);
+        lblTempos.setFont(fonteInfo);
 
         painelInfo.add(lblEstado);
         painelInfo.add(lblBinario);
@@ -230,91 +279,105 @@ public class Main extends JFrame {
 
     private JPanel criarPainelControle() {
         painelControle = new JPanel(new BorderLayout(10, 10));
-        painelControle.setPreferredSize(new Dimension(360, 680));
+        painelControle.setPreferredSize(new Dimension(360, 700));
+        painelControle.setBorder(new EmptyBorder(0, 0, 12, 12));
 
         painelCampos = new JPanel();
         painelCampos.setLayout(new BoxLayout(painelCampos, BoxLayout.Y_AXIS));
+        painelCampos.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo("Controles"),
+            new EmptyBorder(10, 10, 10, 10)
+        ));
 
-        chkViaA = new JCheckBox("Há veículo na via A");
-        chkViaB = new JCheckBox("Há veículo na via B");
-        chkPedestre = new JCheckBox("Há pedestre aguardando");
-        chkEmergencia = new JCheckBox("Modo emergência");
+        Font fontePadrao = new Font("Arial", Font.PLAIN, 15);
+        Font fonteLabel = new Font("Arial", Font.BOLD, 15);
+
+        chkViaA = new JCheckBox("H\u00E1 ve\u00EDculo na via A");
+        chkViaB = new JCheckBox("H\u00E1 ve\u00EDculo na via B");
+        chkPedestre = new JCheckBox("H\u00E1 pedestre aguardando");
+        chkEmergencia = new JCheckBox("Modo emerg\u00EAncia");
         chkModoNoturno = new JCheckBox("Modo noturno");
 
-        chkModoNoturno.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                aplicarTema();
-            }
-        });
+        chkViaA.setFont(fontePadrao);
+        chkViaB.setFont(fontePadrao);
+        chkPedestre.setFont(fontePadrao);
+        chkEmergencia.setFont(fontePadrao);
+        chkModoNoturno.setFont(fontePadrao);
+
+        chkModoNoturno.addActionListener(e -> aplicarTema());
 
         lblModoOperacao = new JLabel("Modo do sistema:");
-        cmbModoOperacao = new JComboBox<ControladorSemaforo.ModoOperacao>(ControladorSemaforo.ModoOperacao.values());
+        lblModoOperacao.setFont(fonteLabel);
+
+        cmbModoOperacao = new JComboBox<>(ControladorSemaforo.ModoOperacao.values());
+        cmbModoOperacao.setFont(fontePadrao);
+        cmbModoOperacao.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 
         lblPrioridade = new JLabel("Prioridade das vias:");
-        cmbPrioridade = new JComboBox<ControladorSemaforo.ModoPrioridade>(ControladorSemaforo.ModoPrioridade.values());
+        lblPrioridade.setFont(fonteLabel);
+
+        cmbPrioridade = new JComboBox<>(ControladorSemaforo.ModoPrioridade.values());
+        cmbPrioridade.setFont(fontePadrao);
+        cmbPrioridade.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
 
         btnSimular = new JButton("Simular ciclo");
-        btnAuto = new JButton("Iniciar automático");
+        btnAuto = new JButton("Iniciar autom\u00E1tico");
         btnResetar = new JButton("Resetar sistema");
 
-        btnSimular.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                simularCiclo();
-            }
-        });
+        btnSimular.setFont(new Font("Arial", Font.BOLD, 14));
+        btnAuto.setFont(new Font("Arial", Font.BOLD, 14));
+        btnResetar.setFont(new Font("Arial", Font.BOLD, 14));
 
-        btnAuto.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                alternarModoAutomatico();
-            }
-        });
+        btnSimular.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnAuto.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btnResetar.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        btnResetar.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resetarSistema();
-            }
-        });
+        btnSimular.addActionListener(e -> simularCiclo());
+        btnAuto.addActionListener(e -> alternarModoAutomatico());
+        btnResetar.addActionListener(e -> resetarSistema());
 
         painelCampos.add(chkViaA);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(chkViaB);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(chkPedestre);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(chkEmergencia);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 12)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 14)));
         painelCampos.add(lblModoOperacao);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(cmbModoOperacao);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 12)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 14)));
         painelCampos.add(lblPrioridade);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 5)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 6)));
         painelCampos.add(cmbPrioridade);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 12)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 14)));
         painelCampos.add(chkModoNoturno);
 
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 15)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 18)));
         painelCampos.add(btnSimular);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 8)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 10)));
         painelCampos.add(btnAuto);
-        painelCampos.add(Box.createRigidArea(new Dimension(0, 8)));
+        painelCampos.add(Box.createRigidArea(new Dimension(0, 10)));
         painelCampos.add(btnResetar);
 
-        txtHistorico = new JTextArea(14, 24);
+        txtHistorico = new JTextArea(16, 24);
         txtHistorico.setEditable(false);
         txtHistorico.setLineWrap(true);
         txtHistorico.setWrapStyleWord(true);
+        txtHistorico.setFont(new Font("Consolas", Font.PLAIN, 14));
+        txtHistorico.setBorder(new EmptyBorder(8, 8, 8, 8));
 
         scrollHistorico = new JScrollPane(txtHistorico);
 
         painelHistorico = new JPanel(new BorderLayout());
+        painelHistorico.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo("Hist\u00F3rico"),
+            new EmptyBorder(6, 6, 6, 6)
+        ));
         painelHistorico.add(scrollHistorico, BorderLayout.CENTER);
 
         painelControle.add(painelCampos, BorderLayout.NORTH);
@@ -336,7 +399,7 @@ public class Main extends JFrame {
         boolean pedestre = chkPedestre.isSelected();
         boolean emergencia = chkEmergencia.isSelected();
 
-        lblRegra.setText(controlador.explicarRegra(viaA, viaB, pedestre, emergencia));
+        lblRegra.setText("Regra aplicada: " + controlador.explicarRegra(viaA, viaB, pedestre, emergencia));
 
         List<EstadoSemaforo> sequencia = controlador.montarSequencia(estadoAtual, viaA, viaB, pedestre, emergencia);
 
@@ -360,17 +423,14 @@ public class Main extends JFrame {
 
         estadoAtual = sequencia.get(indice);
         atualizarTela();
-        registrarHistorico("Estado alterado para " + estadoAtual.name() + " | Binário: " + estadoAtual.getBinario());
+        registrarHistorico("Estado alterado para " + estadoAtual.name() + " | Bin\u00E1rio: " + estadoAtual.getBinario());
 
         final int duracao = controlador.getDuracaoEstado(estadoAtual);
         iniciarContagemRegressiva(duracao);
 
-        timerEtapa = new Timer(duracao * 1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ((Timer) e.getSource()).stop();
-                animarSequencia(sequencia, indice + 1);
-            }
+        timerEtapa = new Timer(duracao * 1000, e -> {
+            ((Timer) e.getSource()).stop();
+            animarSequencia(sequencia, indice + 1);
         });
 
         timerEtapa.setRepeats(false);
@@ -385,17 +445,14 @@ public class Main extends JFrame {
         segundosRestantes = segundos;
         lblContagem.setText("Contagem: " + segundosRestantes + " s");
 
-        timerContagem = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                segundosRestantes--;
+        timerContagem = new Timer(1000, e -> {
+            segundosRestantes--;
 
-                if (segundosRestantes > 0) {
-                    lblContagem.setText("Contagem: " + segundosRestantes + " s");
-                } else {
-                    lblContagem.setText("Contagem: 0 s");
-                    ((Timer) e.getSource()).stop();
-                }
+            if (segundosRestantes > 0) {
+                lblContagem.setText("Contagem: " + segundosRestantes + " s");
+            } else {
+                lblContagem.setText("Contagem: 0 s");
+                ((Timer) e.getSource()).stop();
             }
         });
 
@@ -408,12 +465,9 @@ public class Main extends JFrame {
             return;
         }
 
-        timerProximoCiclo = new Timer(1000, new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ((Timer) e.getSource()).stop();
-                simularCiclo();
-            }
+        timerProximoCiclo = new Timer(1000, e -> {
+            ((Timer) e.getSource()).stop();
+            simularCiclo();
         });
 
         timerProximoCiclo.setRepeats(false);
@@ -424,27 +478,28 @@ public class Main extends JFrame {
         modoAutomatico = !modoAutomatico;
 
         if (modoAutomatico) {
-            btnAuto.setText("Parar automático");
+            btnAuto.setText("Parar autom\u00E1tico");
             btnSimular.setEnabled(false);
-            registrarHistorico("Modo automático ativado.");
+            registrarHistorico("Modo autom\u00E1tico ativado.");
 
             if (!animando) {
                 simularCiclo();
             }
         } else {
-            btnAuto.setText("Iniciar automático");
+            btnAuto.setText("Iniciar autom\u00E1tico");
             btnSimular.setEnabled(true);
 
             if (timerProximoCiclo != null) {
                 timerProximoCiclo.stop();
             }
 
-            registrarHistorico("Modo automático desativado.");
+            registrarHistorico("Modo autom\u00E1tico desativado.");
         }
     }
 
     private void resetarSistema() {
         pararTimers();
+        pararPiscaEmergencia();
 
         modoAutomatico = false;
         animando = false;
@@ -459,7 +514,7 @@ public class Main extends JFrame {
         cmbModoOperacao.setSelectedItem(ControladorSemaforo.ModoOperacao.CRUZAMENTO);
         cmbPrioridade.setSelectedItem(ControladorSemaforo.ModoPrioridade.ALTERNADA);
 
-        btnAuto.setText("Iniciar automático");
+        btnAuto.setText("Iniciar autom\u00E1tico");
         btnSimular.setEnabled(true);
 
         txtHistorico.setText("");
@@ -484,7 +539,45 @@ public class Main extends JFrame {
         }
     }
 
+    private void iniciarPiscaEmergencia() {
+        if (timerPiscaEmergencia != null && timerPiscaEmergencia.isRunning()) {
+            return;
+        }
+
+        amareloPiscaLigado = true;
+        aAmarelo.setBackground(Color.YELLOW);
+        bAmarelo.setBackground(Color.YELLOW);
+        pVermelho.setBackground(Color.RED);
+
+        timerPiscaEmergencia = new Timer(500, e -> {
+            amareloPiscaLigado = !amareloPiscaLigado;
+
+            if (amareloPiscaLigado) {
+                aAmarelo.setBackground(Color.YELLOW);
+                bAmarelo.setBackground(Color.YELLOW);
+            } else {
+                aAmarelo.setBackground(COR_DESLIGADA);
+                bAmarelo.setBackground(COR_DESLIGADA);
+            }
+
+            pVermelho.setBackground(Color.RED);
+        });
+
+        timerPiscaEmergencia.start();
+    }
+
+    private void pararPiscaEmergencia() {
+        if (timerPiscaEmergencia != null) {
+            timerPiscaEmergencia.stop();
+        }
+        amareloPiscaLigado = false;
+    }
+
     private void atualizarTela() {
+        if (estadoAtual != EstadoSemaforo.EMERGENCIA) {
+            pararPiscaEmergencia();
+        }
+
         desligarTodasAsLuzes();
 
         switch (estadoAtual) {
@@ -531,15 +624,14 @@ public class Main extends JFrame {
                 break;
 
             case EMERGENCIA:
-                aVermelho.setBackground(Color.RED);
-                bVermelho.setBackground(Color.RED);
                 pVermelho.setBackground(Color.RED);
+                iniciarPiscaEmergencia();
                 break;
         }
 
         lblEstado.setText("Estado atual: " + estadoAtual.name());
-        lblBinario.setText("Binário: " + estadoAtual.getBinario() + "  [A_V, A_A, A_R, B_V, B_A, B_R, P_V]");
-        lblDescricao.setText("Descrição: " + estadoAtual.getDescricao());
+        lblBinario.setText("Bin\u00E1rio: " + estadoAtual.getBinario() + "  [A_V, A_A, A_R, B_V, B_A, B_R, P_V]");
+        lblDescricao.setText("Descri\u00E7\u00E3o: " + estadoAtual.getDescricao());
         lblTempos.setText(controlador.getDescricaoTempos());
     }
 
@@ -578,6 +670,7 @@ public class Main extends JFrame {
             titulo
         );
         borda.setTitleColor(corTexto);
+        borda.setTitleFont(new Font("Arial", Font.BOLD, 15));
         return borda;
     }
 
@@ -588,22 +681,25 @@ public class Main extends JFrame {
         Color fundoPainel;
         Color fundoSecundario;
         Color texto;
+        Color fundoTitulo;
 
         if (noturno) {
-            fundoJanela = new Color(28, 28, 28);
+            fundoJanela = new Color(24, 24, 24);
             fundoPainel = new Color(40, 40, 40);
             fundoSecundario = new Color(55, 55, 55);
             texto = Color.WHITE;
+            fundoTitulo = new Color(18, 18, 18);
         } else {
-            fundoJanela = new Color(245, 245, 245);
-            fundoPainel = new Color(238, 238, 238);
+            fundoJanela = COR_FUNDO_CLARO;
+            fundoPainel = COR_PAINEL_CLARO;
             fundoSecundario = Color.WHITE;
             texto = Color.BLACK;
+            fundoTitulo = COR_TITULO;
         }
 
         getContentPane().setBackground(fundoJanela);
 
-        if (painelTitulo != null) painelTitulo.setBackground(fundoJanela);
+        if (painelTitulo != null) painelTitulo.setBackground(fundoTitulo);
         if (painelCentro != null) painelCentro.setBackground(fundoJanela);
         if (painelSemaforos != null) painelSemaforos.setBackground(fundoJanela);
 
@@ -611,11 +707,11 @@ public class Main extends JFrame {
         if (painelViaB != null) painelViaB.setBackground(fundoPainel);
         if (painelPedestre != null) painelPedestre.setBackground(fundoPainel);
         if (painelInfo != null) painelInfo.setBackground(fundoPainel);
-        if (painelControle != null) painelControle.setBackground(fundoPainel);
+        if (painelControle != null) painelControle.setBackground(fundoJanela);
         if (painelHistorico != null) painelHistorico.setBackground(fundoPainel);
         if (painelCampos != null) painelCampos.setBackground(fundoPainel);
 
-        if (lblTitulo != null) lblTitulo.setForeground(texto);
+        if (lblTitulo != null) lblTitulo.setForeground(Color.WHITE);
         if (lblEstado != null) lblEstado.setForeground(texto);
         if (lblBinario != null) lblBinario.setForeground(texto);
         if (lblDescricao != null) lblDescricao.setForeground(texto);
@@ -674,6 +770,8 @@ public class Main extends JFrame {
             botao.setBackground(fundo);
             botao.setForeground(texto);
             botao.setFocusPainted(false);
+            botao.setMaximumSize(new Dimension(180, 36));
+            botao.setPreferredSize(new Dimension(180, 36));
         }
     }
 
@@ -681,18 +779,24 @@ public class Main extends JFrame {
         if (painelViaA != null) painelViaA.setBorder(criarBordaTitulo("Via A"));
         if (painelViaB != null) painelViaB.setBorder(criarBordaTitulo("Via B"));
         if (painelPedestre != null) painelPedestre.setBorder(criarBordaTitulo("Pedestre"));
-        if (painelInfo != null) painelInfo.setBorder(criarBordaTitulo("Informações do Sistema"));
-        if (painelControle != null) painelControle.setBorder(criarBordaTitulo("Controles"));
-        if (painelHistorico != null) painelHistorico.setBorder(criarBordaTitulo("Histórico"));
+        if (painelInfo != null) painelInfo.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
+            new EmptyBorder(8, 10, 8, 10)
+        ));
+        if (painelCampos != null) painelCampos.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo("Controles"),
+            new EmptyBorder(10, 10, 10, 10)
+        ));
+        if (painelHistorico != null) painelHistorico.setBorder(BorderFactory.createCompoundBorder(
+            criarBordaTitulo("Hist\u00F3rico"),
+            new EmptyBorder(6, 6, 6, 6)
+        ));
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                Main tela = new Main();
-                tela.setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            Main tela = new Main();
+            tela.setVisible(true);
         });
     }
 }
