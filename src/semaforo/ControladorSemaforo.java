@@ -5,6 +5,24 @@ import java.util.List;
 
 public class ControladorSemaforo {
 
+    /*
+     * =========================================================
+     * ÁREA DE EDIÇÃO RÁPIDA - TEMPOS DO SISTEMA
+     * =========================================================
+     * Altere aqui os tempos principais do semáforo.
+     *
+     * Exemplos:
+     * - aumentar o verde do cruzamento
+     * - diminuir o amarelo
+     * - aumentar o tempo do pedestre
+     * - mudar o tempo do modo emergência
+     */
+    private static final int TEMPO_VERDE_CRUZAMENTO = 6;
+    private static final int TEMPO_VERDE_PARALELAS = 8;
+    private static final int TEMPO_AMARELO = 2;
+    private static final int TEMPO_PEDESTRE = 5;
+    private static final int TEMPO_EMERGENCIA = 6;
+
     public enum ModoPrioridade {
         ALTERNADA("Alternada"),
         VIA_A("Priorizar Via A"),
@@ -237,21 +255,21 @@ public class ControladorSemaforo {
         switch (estado) {
             case A_VERDE:
             case B_VERDE:
-                return 6;
+                return TEMPO_VERDE_CRUZAMENTO;
 
             case AB_VERDE:
-                return 8;
+                return TEMPO_VERDE_PARALELAS;
 
             case A_AMARELO:
             case B_AMARELO:
             case AB_AMARELO:
-                return 2;
+                return TEMPO_AMARELO;
 
             case PEDESTRE:
-                return 5;
+                return TEMPO_PEDESTRE;
 
             case EMERGENCIA:
-                return 6;
+                return TEMPO_EMERGENCIA;
 
             default:
                 return 3;
@@ -260,14 +278,21 @@ public class ControladorSemaforo {
 
     public String getDescricaoTempos() {
         if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
-            return "Tempos: verde conjunto = 8s | amarelo conjunto = 2s | pedestre = 5s | emerg\u00EAncia = 6s";
+            return "Tempos: verde conjunto = " + TEMPO_VERDE_PARALELAS
+                    + "s | amarelo = " + TEMPO_AMARELO
+                    + "s | pedestre = " + TEMPO_PEDESTRE
+                    + "s | emergência = " + TEMPO_EMERGENCIA + "s";
         }
-        return "Tempos: verde = 6s | amarelo = 2s | pedestre = 5s | emerg\u00EAncia = 6s";
+
+        return "Tempos: verde = " + TEMPO_VERDE_CRUZAMENTO
+                + "s | amarelo = " + TEMPO_AMARELO
+                + "s | pedestre = " + TEMPO_PEDESTRE
+                + "s | emergência = " + TEMPO_EMERGENCIA + "s";
     }
 
     public String explicarRegra(boolean viaA, boolean viaB, boolean pedestre, boolean emergencia) {
         if (emergencia) {
-            return "Regra aplicada: modo emerg\u00EAncia ativado, ent\u00E3o as luzes amarelas das vias piscam e o pedestre permanece fechado.";
+            return "Regra aplicada: modo emergência ativado, então as luzes amarelas das vias piscam e o pedestre permanece fechado.";
         }
 
         if (modoOperacao == ModoOperacao.VIAS_PARALELAS) {
@@ -297,6 +322,6 @@ public class ControladorSemaforo {
             return "Regra aplicada: demanda apenas na Via B.";
         }
 
-        return "Regra aplicada: sem novas demandas, o sistema mant\u00E9m o comportamento padr\u00E3o do modo selecionado.";
+        return "Regra aplicada: sem novas demandas, o sistema mantém o comportamento padrão do modo selecionado.";
     }
 }

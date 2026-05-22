@@ -35,10 +35,33 @@ import javax.swing.border.TitledBorder;
 
 public class Main extends JFrame {
 
-    private final ControladorSemaforo controlador = new ControladorSemaforo();
-    private EstadoSemaforo estadoAtual = EstadoSemaforo.A_VERDE;
+    /*
+     * =========================================================
+     * ÁREA DE EDIÇÃO RÁPIDA - VISUAL E LAYOUT
+     * =========================================================
+     * Aqui ficam as mudanças mais fáceis do projeto.
+     *
+     * Você pode alterar aqui:
+     * - tamanho da janela
+     * - tamanho das luzes
+     * - espaço entre as luzes
+     * - velocidade do pisca da emergência
+     * - cores principais
+     */
+    private static final int LARGURA_JANELA = 1380;
+    private static final int ALTURA_JANELA = 820;
+
+    private static final int TAMANHO_LUZ = 92;
+    private static final int ESPACO_LUZES = 12;
+    private static final int INTERVALO_PISCA_EMERGENCIA = 450;
 
     private final Color COR_DESLIGADA = new Color(70, 74, 82);
+    private final Color COR_VERMELHO = new Color(239, 68, 68);
+    private final Color COR_AMARELO = new Color(250, 204, 21);
+    private final Color COR_VERDE = new Color(34, 197, 94);
+
+    private final ControladorSemaforo controlador = new ControladorSemaforo();
+    private EstadoSemaforo estadoAtual = EstadoSemaforo.A_VERDE;
 
     private boolean modoAutomatico = false;
     private boolean animando = false;
@@ -105,8 +128,8 @@ public class Main extends JFrame {
     private JScrollPane scrollHistorico;
 
     public Main() {
-        setTitle("Sem\u00E1foro Inteligente");
-        setSize(1380, 820);
+        setTitle("Semáforo Inteligente");
+        setSize(LARGURA_JANELA, ALTURA_JANELA);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(14, 14));
@@ -143,12 +166,12 @@ public class Main extends JFrame {
         conteudo.setOpaque(false);
         conteudo.setLayout(new BoxLayout(conteudo, BoxLayout.Y_AXIS));
 
-        lblTitulo = new JLabel("Sistema de Sem\u00E1foro Inteligente", SwingConstants.CENTER);
+        lblTitulo = new JLabel("Sistema de Semáforo Inteligente", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 24));
         lblTitulo.setForeground(Color.WHITE);
         lblTitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        lblSubtitulo = new JLabel("Simula\u00E7\u00E3o visual com estados, tempo, prioridade e emerg\u00EAncia", SwingConstants.CENTER);
+        lblSubtitulo = new JLabel("Simulação visual com estados, tempo, prioridade e emergência", SwingConstants.CENTER);
         lblSubtitulo.setFont(new Font("Arial", Font.PLAIN, 14));
         lblSubtitulo.setForeground(new Color(226, 232, 240));
         lblSubtitulo.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -177,6 +200,23 @@ public class Main extends JFrame {
         return painelSemaforos;
     }
 
+    /*
+     * =========================================================
+     * EDIÇÃO FÁCIL - QUANTIDADE DE SEMÁFOROS / LUZES
+     * =========================================================
+     * Se você quiser adicionar ou remover luzes, os principais
+     * pontos para mexer são estes métodos:
+     *
+     * - criarSemaforoViaA()
+     * - criarSemaforoViaB()
+     * - criarSemaforoPedestre()
+     * - atualizarTela()
+     * - desligarTodasAsLuzes()
+     *
+     * Exemplo:
+     * se quiser um novo grupo de semáforo, crie um novo painel
+     * parecido com Via A / Via B / Pedestre.
+     */
     private JPanel criarSemaforoViaA() {
         painelViaA = criarCardSemaforo("Via A");
 
@@ -186,9 +226,9 @@ public class Main extends JFrame {
         aVerde = new LuzCircular();
 
         carcaca.add(aVermelho);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, ESPACO_LUZES)));
         carcaca.add(aAmarelo);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, ESPACO_LUZES)));
         carcaca.add(aVerde);
 
         painelViaA.add(Box.createVerticalGlue());
@@ -207,9 +247,9 @@ public class Main extends JFrame {
         bVerde = new LuzCircular();
 
         carcaca.add(bVermelho);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, ESPACO_LUZES)));
         carcaca.add(bAmarelo);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, ESPACO_LUZES)));
         carcaca.add(bVerde);
 
         painelViaB.add(Box.createVerticalGlue());
@@ -227,7 +267,7 @@ public class Main extends JFrame {
         pVerde = new LuzCircular();
 
         carcaca.add(pVermelho);
-        carcaca.add(Box.createRigidArea(new Dimension(0, 12)));
+        carcaca.add(Box.createRigidArea(new Dimension(0, ESPACO_LUZES)));
         carcaca.add(pVerde);
 
         painelPedestre.add(Box.createVerticalGlue());
@@ -268,7 +308,7 @@ public class Main extends JFrame {
     private JPanel criarPainelInfo() {
         painelInfo = new JPanel(new GridLayout(6, 1, 6, 6));
         painelInfo.setBorder(BorderFactory.createCompoundBorder(
-            criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
+            criarBordaTitulo("Informações do Sistema"),
             new EmptyBorder(12, 14, 12, 14)
         ));
 
@@ -313,10 +353,10 @@ public class Main extends JFrame {
         Font fontePadrao = new Font("Arial", Font.PLAIN, 15);
         Font fonteLabel = new Font("Arial", Font.BOLD, 15);
 
-        chkViaA = new JCheckBox("H\u00E1 ve\u00EDculo na via A");
-        chkViaB = new JCheckBox("H\u00E1 ve\u00EDculo na via B");
-        chkPedestre = new JCheckBox("H\u00E1 pedestre aguardando");
-        chkEmergencia = new JCheckBox("Modo emerg\u00EAncia");
+        chkViaA = new JCheckBox("Há veículo na via A");
+        chkViaB = new JCheckBox("Há veículo na via B");
+        chkPedestre = new JCheckBox("Há pedestre aguardando");
+        chkEmergencia = new JCheckBox("Modo emergência");
         chkModoNoturno = new JCheckBox("Modo noturno");
 
         chkViaA.setFont(fontePadrao);
@@ -342,7 +382,7 @@ public class Main extends JFrame {
         cmbPrioridade.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
 
         btnSimular = new JButton("Simular ciclo");
-        btnAuto = new JButton("Iniciar autom\u00E1tico");
+        btnAuto = new JButton("Iniciar automático");
         btnResetar = new JButton("Resetar sistema");
 
         configurarBotao(btnSimular);
@@ -393,7 +433,7 @@ public class Main extends JFrame {
 
         painelHistorico = new JPanel(new BorderLayout());
         painelHistorico.setBorder(BorderFactory.createCompoundBorder(
-            criarBordaTitulo("Hist\u00F3rico"),
+            criarBordaTitulo("Histórico"),
             new EmptyBorder(8, 8, 8, 8)
         ));
         painelHistorico.add(scrollHistorico, BorderLayout.CENTER);
@@ -417,7 +457,7 @@ public class Main extends JFrame {
         boolean pedestre = chkPedestre.isSelected();
         boolean emergencia = chkEmergencia.isSelected();
 
-        lblRegra.setText("Regra aplicada: " + controlador.explicarRegra(viaA, viaB, pedestre, emergencia));
+        lblRegra.setText(controlador.explicarRegra(viaA, viaB, pedestre, emergencia));
 
         List<EstadoSemaforo> sequencia = controlador.montarSequencia(estadoAtual, viaA, viaB, pedestre, emergencia);
 
@@ -441,7 +481,7 @@ public class Main extends JFrame {
 
         estadoAtual = sequencia.get(indice);
         atualizarTela();
-        registrarHistorico("Estado alterado para " + estadoAtual.name() + " | Bin\u00E1rio: " + estadoAtual.getBinario());
+        registrarHistorico("Estado alterado para " + estadoAtual.name() + " | Binário: " + estadoAtual.getBinario());
 
         final int duracao = controlador.getDuracaoEstado(estadoAtual);
         iniciarContagemRegressiva(duracao);
@@ -496,22 +536,22 @@ public class Main extends JFrame {
         modoAutomatico = !modoAutomatico;
 
         if (modoAutomatico) {
-            btnAuto.setText("Parar autom\u00E1tico");
+            btnAuto.setText("Parar automático");
             btnSimular.setEnabled(false);
-            registrarHistorico("Modo autom\u00E1tico ativado.");
+            registrarHistorico("Modo automático ativado.");
 
             if (!animando) {
                 simularCiclo();
             }
         } else {
-            btnAuto.setText("Iniciar autom\u00E1tico");
+            btnAuto.setText("Iniciar automático");
             btnSimular.setEnabled(true);
 
             if (timerProximoCiclo != null) {
                 timerProximoCiclo.stop();
             }
 
-            registrarHistorico("Modo autom\u00E1tico desativado.");
+            registrarHistorico("Modo automático desativado.");
         }
     }
 
@@ -532,7 +572,7 @@ public class Main extends JFrame {
         cmbModoOperacao.setSelectedItem(ControladorSemaforo.ModoOperacao.CRUZAMENTO);
         cmbPrioridade.setSelectedItem(ControladorSemaforo.ModoPrioridade.ALTERNADA);
 
-        btnAuto.setText("Iniciar autom\u00E1tico");
+        btnAuto.setText("Iniciar automático");
         btnSimular.setEnabled(true);
 
         txtHistorico.setText("");
@@ -563,22 +603,22 @@ public class Main extends JFrame {
         }
 
         amareloPiscaLigado = true;
-        aAmarelo.setCor(Color.YELLOW);
-        bAmarelo.setCor(Color.YELLOW);
-        pVermelho.setCor(Color.RED);
+        aAmarelo.setCor(COR_AMARELO);
+        bAmarelo.setCor(COR_AMARELO);
+        pVermelho.setCor(COR_VERMELHO);
 
-        timerPiscaEmergencia = new Timer(450, e -> {
+        timerPiscaEmergencia = new Timer(INTERVALO_PISCA_EMERGENCIA, e -> {
             amareloPiscaLigado = !amareloPiscaLigado;
 
             if (amareloPiscaLigado) {
-                aAmarelo.setCor(Color.YELLOW);
-                bAmarelo.setCor(Color.YELLOW);
+                aAmarelo.setCor(COR_AMARELO);
+                bAmarelo.setCor(COR_AMARELO);
             } else {
                 aAmarelo.setCor(COR_DESLIGADA);
                 bAmarelo.setCor(COR_DESLIGADA);
             }
 
-            pVermelho.setCor(Color.RED);
+            pVermelho.setCor(COR_VERMELHO);
         });
 
         timerPiscaEmergencia.start();
@@ -591,6 +631,18 @@ public class Main extends JFrame {
         amareloPiscaLigado = false;
     }
 
+    /*
+     * =========================================================
+     * EDIÇÃO FÁCIL - CORES DAS LUZES
+     * =========================================================
+     * Se quiser trocar as cores do semáforo, mexa principalmente:
+     * - COR_VERMELHO
+     * - COR_AMARELO
+     * - COR_VERDE
+     * - COR_DESLIGADA
+     *
+     * E também neste método, caso queira mudar a lógica visual.
+     */
     private void atualizarTela() {
         if (estadoAtual != EstadoSemaforo.EMERGENCIA) {
             pararPiscaEmergencia();
@@ -600,56 +652,56 @@ public class Main extends JFrame {
 
         switch (estadoAtual) {
             case A_VERDE:
-                aVerde.setCor(new Color(34, 197, 94));
-                bVermelho.setCor(new Color(239, 68, 68));
-                pVermelho.setCor(new Color(239, 68, 68));
+                aVerde.setCor(COR_VERDE);
+                bVermelho.setCor(COR_VERMELHO);
+                pVermelho.setCor(COR_VERMELHO);
                 break;
 
             case A_AMARELO:
-                aAmarelo.setCor(new Color(250, 204, 21));
-                bVermelho.setCor(new Color(239, 68, 68));
-                pVermelho.setCor(new Color(239, 68, 68));
+                aAmarelo.setCor(COR_AMARELO);
+                bVermelho.setCor(COR_VERMELHO);
+                pVermelho.setCor(COR_VERMELHO);
                 break;
 
             case B_VERDE:
-                aVermelho.setCor(new Color(239, 68, 68));
-                bVerde.setCor(new Color(34, 197, 94));
-                pVermelho.setCor(new Color(239, 68, 68));
+                aVermelho.setCor(COR_VERMELHO);
+                bVerde.setCor(COR_VERDE);
+                pVermelho.setCor(COR_VERMELHO);
                 break;
 
             case B_AMARELO:
-                aVermelho.setCor(new Color(239, 68, 68));
-                bAmarelo.setCor(new Color(250, 204, 21));
-                pVermelho.setCor(new Color(239, 68, 68));
+                aVermelho.setCor(COR_VERMELHO);
+                bAmarelo.setCor(COR_AMARELO);
+                pVermelho.setCor(COR_VERMELHO);
                 break;
 
             case AB_VERDE:
-                aVerde.setCor(new Color(34, 197, 94));
-                bVerde.setCor(new Color(34, 197, 94));
-                pVermelho.setCor(new Color(239, 68, 68));
+                aVerde.setCor(COR_VERDE);
+                bVerde.setCor(COR_VERDE);
+                pVermelho.setCor(COR_VERMELHO);
                 break;
 
             case AB_AMARELO:
-                aAmarelo.setCor(new Color(250, 204, 21));
-                bAmarelo.setCor(new Color(250, 204, 21));
-                pVermelho.setCor(new Color(239, 68, 68));
+                aAmarelo.setCor(COR_AMARELO);
+                bAmarelo.setCor(COR_AMARELO);
+                pVermelho.setCor(COR_VERMELHO);
                 break;
 
             case PEDESTRE:
-                aVermelho.setCor(new Color(239, 68, 68));
-                bVermelho.setCor(new Color(239, 68, 68));
-                pVerde.setCor(new Color(34, 197, 94));
+                aVermelho.setCor(COR_VERMELHO);
+                bVermelho.setCor(COR_VERMELHO);
+                pVerde.setCor(COR_VERDE);
                 break;
 
             case EMERGENCIA:
-                pVermelho.setCor(new Color(239, 68, 68));
+                pVermelho.setCor(COR_VERMELHO);
                 iniciarPiscaEmergencia();
                 break;
         }
 
         lblEstado.setText("Estado atual: " + estadoAtual.name());
-        lblBinario.setText("Bin\u00E1rio: " + estadoAtual.getBinario() + "  [A_V, A_A, A_R, B_V, B_A, B_R, P_V]");
-        lblDescricao.setText("Descri\u00E7\u00E3o: " + estadoAtual.getDescricao());
+        lblBinario.setText("Binário: " + estadoAtual.getBinario() + "  [A_V, A_A, A_R, B_V, B_A, B_R, P_V]");
+        lblDescricao.setText("Descrição: " + estadoAtual.getDescricao());
         lblTempos.setText(controlador.getDescricaoTempos());
     }
 
@@ -821,7 +873,7 @@ public class Main extends JFrame {
 
         if (painelInfo != null) {
             painelInfo.setBorder(BorderFactory.createCompoundBorder(
-                criarBordaTitulo("Informa\u00E7\u00F5es do Sistema"),
+                criarBordaTitulo("Informações do Sistema"),
                 new EmptyBorder(12, 14, 12, 14)
             ));
         }
@@ -835,20 +887,27 @@ public class Main extends JFrame {
 
         if (painelHistorico != null) {
             painelHistorico.setBorder(BorderFactory.createCompoundBorder(
-                criarBordaTitulo("Hist\u00F3rico"),
+                criarBordaTitulo("Histórico"),
                 new EmptyBorder(8, 8, 8, 8)
             ));
         }
     }
 
+    /*
+     * =========================================================
+     * EDIÇÃO FÁCIL - TAMANHO DAS LUZES
+     * =========================================================
+     * Para aumentar ou diminuir o tamanho das luzes:
+     * altere a constante TAMANHO_LUZ.
+     */
     private class LuzCircular extends JPanel {
         private Color corAtual = COR_DESLIGADA;
 
         public LuzCircular() {
             setOpaque(false);
-            setPreferredSize(new Dimension(92, 92));
-            setMaximumSize(new Dimension(92, 92));
-            setMinimumSize(new Dimension(92, 92));
+            setPreferredSize(new Dimension(TAMANHO_LUZ, TAMANHO_LUZ));
+            setMaximumSize(new Dimension(TAMANHO_LUZ, TAMANHO_LUZ));
+            setMinimumSize(new Dimension(TAMANHO_LUZ, TAMANHO_LUZ));
             setAlignmentX(Component.CENTER_ALIGNMENT);
         }
 
