@@ -13,7 +13,7 @@ public class ControladorSemaforo {
     private static final int TEMPO_VERDE_CRUZAMENTO = 6;
     private static final int TEMPO_VERDE_PARALELAS = 8;
     private static final int TEMPO_AMARELO = 2;
-    private static final int TEMPO_PEDESTRE = 5;
+    private static final int TEMPO_PEDESTRE = 10;
     private static final int TEMPO_EMERGENCIA = 6;
 
     public enum ModoPrioridade {
